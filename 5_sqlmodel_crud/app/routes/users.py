@@ -1,0 +1,67 @@
+from uuid import UUID
+
+from fastapi import HTTPException, APIRouter, Query
+
+from app.database import SessionDep
+from app.models.users import UserCreate, UserOut, UsersOut, UserUpdate, User
+from app.repositories.users import (
+    get_user, 
+    create_user as create_user_repository, 
+    delete_user,
+    list_users_with_count,
+    get_user_by_username,
+    update_user
+)
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+@router.post("/", response_model=UserOut)
+async def create_user(user: UserCreate, session: SessionDep):
+    return await create_user_repository(session, user)
+
+@router.get("/", response_model=UsersOut)
+async def read_users(
+    session: SessionDep,
+    q: str | None = Query(default=None, description="Поиск по username"),
+    is_active: bool | None = Query(default=None, description="Фильтр активности"),
+    limit: int = Query(default=20, ge=1, le=100, description="Количество записей на странице"),
+    offset: int = Query(default=0, ge=0, description="Сколько записей пропустить")
+):
+    users, count = await list_users_with_count(session, q, is_active, limit, offset)
+    return UsersOut(data=users, count=count)
+
+@router.get("/{user_id}", response_model=UserOut)
+async def get_user_by_id(user_id: UUID, session: SessionDep):
+    user = await get_user(session, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+@router.patch('/{user_id}', response_model=UserOut)
+async def patch_user(user_id: UUID, user_in: UserUpdate, session: SessionDep):
+    # получаем пользователя по UUID
+    db_user = await session.get(User, user_id)
+    # если пользователь не найден - возвращаем ошибку
+    if not db_user:
+        raise HTTPException(status_code=404, detail='User not found')
+    
+    # если нужно обновить username - проверяем уникальность
+    if user_in.username:
+        # пробуем получим пользователя с указанными username
+        existing_user = await get_user_by_username(session, user_in.username)
+        # если такой пользователь есть и это другой пользователя - запрещаем менять username
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=409, detail='Username already exists')
+    
+    # обновляем указанные поля
+    db_user = await update_user(session=session, db_user=db_user, user_in=user_in)
+    return db_user
+
+@router.delete("/{user_id}")
+async def delete_user_by_id(user_id: UUID, session: SessionDep):
+    user = await get_user(session, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    await delete_user(session, user)
+    return {"status": "deleted"}
