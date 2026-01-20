@@ -12,6 +12,8 @@ from app.repositories.users import (
     get_user_by_username,
     update_user
 )
+from app.models.items import ItemCreate, ItemOut
+from app.repositories.items import create_item as create_item_repository, list_items_by_user_id
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -65,3 +67,19 @@ async def delete_user_by_id(user_id: UUID, session: SessionDep):
 
     await delete_user(session, user)
     return {"status": "deleted"}
+
+@router.post('/{user_id}/items')
+async def create_user_item(user_id: UUID, item_data: ItemCreate, session: SessionDep):
+    user = await get_user(session, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail='User not found')
+    new_item = await create_item_repository(session=session, user_id=user_id, item_data=item_data)
+    return new_item
+
+@router.get('/{user_id}/items')
+async def get_user_items(user_id: UUID, session: SessionDep):
+    user = await get_user(session, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail='User not found')
+    items_list = await list_items_by_user_id(session=session, user_id=user_id)
+    return items_list
