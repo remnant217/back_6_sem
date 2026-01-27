@@ -32,7 +32,7 @@
 
 Начнем внедрять `Relationship Attributes` в код наших моделей `User` и `Item`.
 
-Сначала пойдем, например, в `app`/`models`/`users`.py и импортируем функцию `Relationship()`
+Сначала пойдем, например, в `app/models/users.py` и импортируем функцию `Relationship()`
 из модуля `SQLModel`. Именно с помощью `Relationship()` мы сможем объявлять `Relationship Attributes`.
 
 
