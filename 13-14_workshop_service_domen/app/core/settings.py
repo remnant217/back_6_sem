@@ -8,11 +8,17 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    APP_TITLE: str = "Books API"
+    APP_HOST: str = "127.0.0.1"
+    APP_PORT: int = 8000
+    APP_RELOAD: bool = True
+    API_PREFIX: str = ""
+
     DB_HOST: str = "localhost"
     DB_PORT: int = 5432
     DB_USER: str = "postgres"
     DB_PASSWORD: str = "1234"
-    DB_NAME: str = "books_db"
+    DB_NAME: str = "books"
     DB_ECHO: bool = False
 
     @property
@@ -21,6 +27,5 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.DB_USER}:{self.DB_PASSWORD}"
             f"@{self.DB_HOST}:{self.DB_PORT}/{self.DB_NAME}"
         )
-
 
 settings = Settings()

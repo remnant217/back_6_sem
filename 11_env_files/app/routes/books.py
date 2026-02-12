@@ -1,8 +1,3 @@
-'''
-АГ
-Обновил импорты - убрал ненужные, добавил нужные, дал псевдонимы, чтобы
-не дублировали названия импортов из репозитория и роутеров (тот же create_book()).
-'''
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
@@ -17,12 +12,6 @@ from app.repositories.books import (
 )
 
 router = APIRouter(prefix="/books", tags=["Books"])
-'''
-АГ
-Убрал строчку SessionDep = Annotated[AsyncSession, Depends(get_session)]
-в database.py, логичнее, чтобы создание этой зависимости было там.
-'''
-
 @router.post("", response_model=BookOut)
 async def create_book(payload: BookCreate, session: SessionDep):
     return await create_book_repo(session, payload)

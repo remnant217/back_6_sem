@@ -30,32 +30,25 @@ class InvalidYearError(DomainError):
 class Book:
     """Доменная сущность 'Книга' с базовыми инвариантами и методами изменения."""
 
-    # Идентификатор сущности, может быть None до сохранения в БД
     id: UUID | None
-    # Обязательные данные книги
     title: str
     author: str
     published_year: int
     genre: BookGenre
-    # Необязательные данные книги
     description: str | None = None
     page_count: int | None = None
 
-    # Константы домена, не являются полями экземпляра класса
     MIN_YEAR: ClassVar[int] = 1000
     MAX_TITLE_LEN: ClassVar[int] = 200
     MAX_AUTHOR_LEN: ClassVar[int] = 120
     MAX_DESCRIPTION_LEN: ClassVar[int] = 5000
 
-    # Приводим данные к единому формату и проверяем инварианты при создании объекта
     def __post_init__(self) -> None:
         self.title = self._norm_required(self.title, "title", self.MAX_TITLE_LEN)
         self.author = self._norm_required(self.author, "author", self.MAX_AUTHOR_LEN)
         self.published_year = self._validate_year(self.published_year)
         self.description = self._norm_optional(self.description, "description", self.MAX_DESCRIPTION_LEN)
         self.page_count = self._validate_page_count(self.page_count)
-
-    # Публичные операции над сущностью
 
     def rename(self, new_title: str) -> None:
         self.title = self._norm_required(new_title, "title", self.MAX_TITLE_LEN)
@@ -75,7 +68,6 @@ class Book:
     def change_page_count(self, new_page_count: int | None) -> None:
         self.page_count = self._validate_page_count(new_page_count)
 
-    # Внутренние методы для валидации и преобразования полей
 
     @classmethod
     def _validate_year(cls, year: int) -> int:

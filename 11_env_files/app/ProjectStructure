@@ -1,0 +1,7 @@
+app/
+│
+├─ domain/
+│   └─ book.py                 Доменный слой: сущность Book + бизнес-правила
+│
+├─ models/
+│   └─ books.py                Модели данных: ORM-модель books + Pydantic-схемы

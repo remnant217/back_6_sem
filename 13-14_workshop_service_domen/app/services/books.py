@@ -95,6 +95,4 @@ class BookService:
         return True
 
 
-
-
 book_service = BookService()
