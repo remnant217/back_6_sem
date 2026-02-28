@@ -12,6 +12,7 @@ from app.core.config import settings
 from app.database import AsyncSessionLocal
 from app.models.tokens import TokenPayload
 from app.models.users import User
+from app.access import AccessUser
 
 
 async def get_session():
@@ -46,7 +47,7 @@ async def get_current_user(
     session: SessionDep,
     security_scopes: SecurityScopes,
     token: TokenDep
-) -> User:
+) -> AccessUser:
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
     else:
@@ -83,6 +84,4 @@ async def get_current_user(
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    return user
-
-CurrentUser = Annotated[User, Depends(get_current_user)]
+    return AccessUser(user=user, scopes=token_scopes)

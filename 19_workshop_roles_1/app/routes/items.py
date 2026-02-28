@@ -1,11 +1,13 @@
 from uuid import UUID
+from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Security
 
-from app.deps import SessionDep
+from app.deps import SessionDep, get_current_user
 from app.models.items import ItemOut, ItemUpdate, ItemsOut
 from app.repositories.items import get_item, delete_item, patch_item, list_items_with_count
 from app.repositories.users import get_user
+from app.access import AccessUser
 
 router = APIRouter(prefix='/items', tags=['items'])
 
@@ -13,6 +15,7 @@ router = APIRouter(prefix='/items', tags=['items'])
 @router.get('/', response_model=ItemsOut)
 async def read_items(
     session: SessionDep,
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["items:read:own"])],
     q: str | None = Query(default=None, description='Поиск по названию'),
     limit: int = Query(default=20, ge=1, le=100, description='Количество записей на странице'),
     offset: int = Query(default=0, ge=0, description='Сколько записей пропустить')
@@ -29,7 +32,11 @@ async def read_items(
 
 
 @router.get("/{item_id}", response_model=ItemOut) 
-async def read_item_by_id(item_id: UUID, session: SessionDep):
+async def read_item_by_id(
+    item_id: UUID, 
+    session: SessionDep,
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["items:read:own"])]
+):
     item = await get_item(session, item_id)
     if item is None:
         raise HTTPException(status_code=404, detail='Item not found')
@@ -37,7 +44,12 @@ async def read_item_by_id(item_id: UUID, session: SessionDep):
 
 
 @router.patch("/{item_id}", response_model=ItemOut) 
-async def patch_item_by_id(item_id: UUID, item_data: ItemUpdate, session: SessionDep):
+async def patch_item_by_id(
+    item_id: UUID, 
+    item_data: ItemUpdate, 
+    session: SessionDep,
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["items:write:own"])]
+):
     item_db = await get_item(session, item_id)
     if item_db is None:
         raise HTTPException(status_code=404, detail='Item not found')
@@ -63,7 +75,11 @@ async def patch_item_by_id(item_id: UUID, item_data: ItemUpdate, session: Sessio
 
 
 @router.delete("/{item_id}")
-async def delete_item_by_id(item_id: UUID, session: SessionDep):
+async def delete_item_by_id(
+    item_id: UUID, 
+    session: SessionDep,
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["items:write:own"])]
+):
     item = await get_item(session, item_id)
     if item is None:
         raise HTTPException(status_code=404, detail='Item not found')

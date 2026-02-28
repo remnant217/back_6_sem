@@ -18,6 +18,11 @@ ROLE_TO_SCOPES: dict[str, set[str]] = {
         "users:write:own"
     },
     "admin": {
+        "items:read:own",
+        "items:write:own",
+        "users:read:own",
+        "users:write:own",
+
         "items:read:any",
         "items:write:any",
         "users:read:any",
