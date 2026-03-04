@@ -16,6 +16,7 @@ from app.repositories.users import (
 from app.models.items import ItemCreate, ItemsOut
 from app.repositories.items import create_item as create_item_repository, list_items_with_count
 from app.access import AccessUser
+from app.services import users as users_service
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -49,6 +50,13 @@ async def read_users(
 ):
     users, count = await list_users_with_count(session, q, is_active, limit, offset)
     return UsersOut(data=users, count=count)
+
+
+@router.get("/me", response_model=UserOut)
+async def get_me(
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["users:read:own"])]
+):
+    return await users_service.get_me(current_user)
 
 
 @router.get("/{user_id}", response_model=UserOut)
@@ -85,6 +93,22 @@ async def get_user_items(
     )
 
     return ItemsOut(data=items, count=count)
+
+
+@router.patch("/me", response_model=UserOut)
+async def patch_me(
+    user_in: UserUpdate, 
+    session: SessionDep,
+    current_user: Annotated[AccessUser, Security(get_current_user, scopes=["users:write:own"])]
+):
+    try:
+        return await users_service.patch_me(
+            session=session,
+            current_user=current_user,
+            user_in=user_in
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @router.patch("/{user_id}", response_model=UserOut)
